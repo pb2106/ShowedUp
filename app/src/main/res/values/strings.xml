@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ShowedUp</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_title_1">Never Miss\nAnother Class</string>
+    <string name="onboarding_desc_1">ShowedUp automatically records your attendance so you can focus on learning.</string>
+    <string name="onboarding_title_2">Private &amp;\nSecure</string>
+    <string name="onboarding_desc_2">Your data stays on your device.\nNo servers, no accounts, no tracking.</string>
+    <string name="onboarding_title_3">Set Up\nYour Schedule</string>
+    <string name="onboarding_desc_3">Add your classes and ShowedUp will do the rest.</string>
+    <string name="onboarding_get_started">Get Started</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_grant_permissions">Grant Permissions</string>
+
+    <!-- Home -->
+    <string name="home_title">Today</string>
+    <string name="home_no_classes">No classes today</string>
+    <string name="home_all_done">All done for today!</string>
+
+    <!-- Calendar -->
+    <string name="calendar_title">Calendar</string>
+    <string name="calendar_no_records">No records for this date</string>
+
+    <!-- Schedule -->
+    <string name="schedule_title">Schedule</string>
+    <string name="schedule_add_class">Add Class</string>
+    <string name="schedule_edit_class">Edit Class</string>
+    <string name="schedule_no_classes">No classes set up yet</string>
+
+    <!-- Day Off -->
+    <string name="dayoff_title">Day Off</string>
+    <string name="dayoff_sick">Sick Day</string>
+    <string name="dayoff_personal">Personal Day</string>
+    <string name="dayoff_holiday">Holiday</string>
+    <string name="dayoff_event">Event</string>
+    <string name="dayoff_submitted">Day off recorded!</string>
+
+    <!-- Attendance Log -->
+    <string name="log_title">Attendance Log</string>
+    <string name="log_no_records">No records yet</string>
+    <string name="log_search_hint">Search classes…</string>
+
+    <!-- Export -->
+    <string name="export_title">Export Report</string>
+    <string name="export_generate">Generate PDF</string>
+    <string name="export_share">Share</string>
+
+    <!-- Signal Overlay -->
+    <string name="signal_collecting">Recording attendance…</string>
+    <string name="signal_complete">Done!</string>
+    <string name="signal_failed">Could not record — try again</string>
+
+    <!-- Biometric -->
+    <string name="biometric_title">Unlock ShowedUp</string>
+    <string name="biometric_subtitle">Verify your identity to continue</string>
+    <string name="biometric_negative">Cancel</string>
+
+    <!-- Status -->
+    <string name="status_present">Present</string>
+    <string name="status_absent">Absent</string>
+    <string name="status_dayoff">Day Off</string>
+    <string name="status_holiday">Holiday</string>
+    <string name="status_upcoming">Upcoming</string>
+
+    <!-- General -->
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="confirm">Confirm</string>
+    <string name="error_generic">Something went wrong</string>
+    <string name="retry">Try Again</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_signal">Attendance Recording</string>
+    <string name="notification_collecting">Recording your attendance…</string>
+</resources>
