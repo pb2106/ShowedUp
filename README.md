@@ -116,6 +116,7 @@ app/build/outputs/apk/debug/app-debug.apk
 - attendance percentage calculator
 - Tutorial to be changed
 - day and date shows in app
+- privacy policy
 
 ## License
 
