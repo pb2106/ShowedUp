@@ -14,7 +14,6 @@ signing.properties
 
 # Gradle
 .gradle/
-gradle-wrapper.jar
 local.properties
 
 # Android Studio / IntelliJ
@@ -49,3 +48,14 @@ Thumbs.db
 # Virtual env (since you're using venv)
 venv/
 .venv/
+
+# Kotlin / Android build caches
+.kotlin/
+buildSrc/.gradle/
+
+# Firebase / Google services configs (optional)
+google-services.json
+
+# Android signing
+*.pem
+*.key
