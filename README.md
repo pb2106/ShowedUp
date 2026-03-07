@@ -61,48 +61,6 @@ app/src/main/java/com/showedup/app/
     ├── screens/      # All 8 screens with ViewModels
     └── theme/        # Color, Type, Shape, Spacing, Theme
 ```
-
-## Building
-
-### Prerequisites
-
-- **Android Studio** Iguana or later
-- **JDK 17**
-- **Android SDK** with platform API 35 and build-tools
-
-### Debug APK
-
-```bash
-./gradlew assembleDebug
-```
-
-The APK will be at:
-```
-app/build/outputs/apk/debug/app-debug.apk
-```
-
-### Release APK (signed)
-
-1. Generate a keystore (one-time):
-   ```bash
-   keytool -genkey -v -keystore showedup-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias showedup
-   ```
-
-2. Create `keystore.properties` in the project root:
-   ```properties
-   storeFile=../showedup-release.jks
-   storePassword=your_store_password
-   keyAlias=showedup
-   keyPassword=your_key_password
-   ```
-
-3. Build the release APK:
-   ```bash
-   ./gradlew assembleRelease
-   ```
-
-   Output: `app/build/outputs/apk/release/app-release.apk`
-
 ## Security
 
 - `FLAG_SECURE` on all windows — screenshots blocked
