@@ -1,7 +1,9 @@
 package com.showedup.app.ui.navigation
 
+import android.content.Context
 import androidx.compose.animation.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -11,11 +13,11 @@ import com.showedup.app.ui.screens.dayoff.DayOffScreen
 import com.showedup.app.ui.screens.export.ExportScreen
 import com.showedup.app.ui.screens.home.HomeScreen
 import com.showedup.app.ui.screens.log.AttendanceLogScreen
-import com.showedup.app.ui.screens.onboarding.OnboardingScreen
+import com.showedup.app.ui.screens.permission.PermissionScreen
 import com.showedup.app.ui.screens.schedule.ScheduleScreen
 
 sealed class Screen(val route: String) {
-    data object Onboarding : Screen("onboarding")
+    data object Permission : Screen("permission")
     data object Home : Screen("home")
     data object Calendar : Screen("calendar")
     data object Schedule : Screen("schedule")
@@ -24,23 +26,34 @@ sealed class Screen(val route: String) {
     data object Export : Screen("export")
 }
 
+private const val PREFS_NAME = "showedup_prefs"
+private const val KEY_PERMISSIONS_HANDLED = "permissions_handled"
+
 @Composable
 fun ShowedUpNavHost(
     navController: NavHostController = rememberNavController()
 ) {
+    val context = LocalContext.current
+    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    val permissionsHandled = prefs.getBoolean(KEY_PERMISSIONS_HANDLED, false)
+
+    val startDest = if (permissionsHandled) Screen.Home.route else Screen.Permission.route
+
     NavHost(
         navController = navController,
-        startDestination = Screen.Onboarding.route,
+        startDestination = startDest,
         enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
         exitTransition = { slideOutHorizontally(targetOffsetX = { -it / 3 }) + fadeOut() },
         popEnterTransition = { slideInHorizontally(initialOffsetX = { -it / 3 }) + fadeIn() },
         popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
     ) {
-        composable(Screen.Onboarding.route) {
-            OnboardingScreen(
+        composable(Screen.Permission.route) {
+            PermissionScreen(
                 onComplete = {
+                    // Mark permissions as handled so we skip next time
+                    prefs.edit().putBoolean(KEY_PERMISSIONS_HANDLED, true).apply()
                     navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Onboarding.route) { inclusive = true }
+                        popUpTo(Screen.Permission.route) { inclusive = true }
                     }
                 }
             )

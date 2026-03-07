@@ -3,7 +3,8 @@ package com.showedup.app.ui.screens.calendar
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.showedup.app.data.entity.AttendanceRecordEntity
-import com.showedup.app.data.entity.DayOffRecordEntity
+import com.showedup.app.data.entity.DayOffType
+import com.showedup.app.data.entity.PlannedDayOffEntity
 import com.showedup.app.data.repository.AttendanceRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -18,8 +19,14 @@ data class CalendarUiState(
     val selectedDate: LocalDate? = null,
     val attendanceDates: Set<String> = emptySet(),
     val dayOffDates: Set<String> = emptySet(),
+    val plannedEventDates: Set<String> = emptySet(),
     val selectedDateRecords: List<AttendanceRecordEntity> = emptyList(),
-    val isLoading: Boolean = true
+    val selectedDatePlannedEvents: List<PlannedDayOffEntity> = emptyList(),
+    val isLoading: Boolean = true,
+    val showAddEventDialog: Boolean = false,
+    val addEventDate: LocalDate = LocalDate.now(),
+    val addEventName: String = "",
+    val addEventType: DayOffType = DayOffType.EVENT
 )
 
 @HiltViewModel
@@ -32,6 +39,7 @@ class CalendarViewModel @Inject constructor(
 
     init {
         loadDates()
+        loadPlannedEvents()
     }
 
     private fun loadDates() {
@@ -47,6 +55,18 @@ class CalendarViewModel @Inject constructor(
         }
     }
 
+    private fun loadPlannedEvents() {
+        viewModelScope.launch {
+            attendanceRepository.getAllPlannedDayOffs().collect { events ->
+                _uiState.update {
+                    it.copy(
+                        plannedEventDates = events.map { e -> e.targetDate }.toSet()
+                    )
+                }
+            }
+        }
+    }
+
     fun selectDate(date: LocalDate) {
         _uiState.update { it.copy(selectedDate = date) }
         viewModelScope.launch {
@@ -55,9 +75,63 @@ class CalendarViewModel @Inject constructor(
                     _uiState.update { it.copy(selectedDateRecords = records) }
                 }
         }
+        viewModelScope.launch {
+            attendanceRepository.getAllPlannedDayOffs().collect { allEvents ->
+                val dateStr = date.toString()
+                _uiState.update {
+                    it.copy(
+                        selectedDatePlannedEvents = allEvents.filter { e -> e.targetDate == dateStr }
+                    )
+                }
+            }
+        }
     }
 
     fun changeMonth(yearMonth: YearMonth) {
         _uiState.update { it.copy(currentMonth = yearMonth) }
+    }
+
+    fun showAddEventDialog() {
+        val prefilledDate = _uiState.value.selectedDate ?: LocalDate.now()
+        _uiState.update {
+            it.copy(
+                showAddEventDialog = true,
+                addEventDate = prefilledDate,
+                addEventName = "",
+                addEventType = DayOffType.EVENT
+            )
+        }
+    }
+
+    fun dismissAddEventDialog() {
+        _uiState.update { it.copy(showAddEventDialog = false) }
+    }
+
+    fun updateAddEventDate(date: LocalDate) {
+        _uiState.update { it.copy(addEventDate = date) }
+    }
+
+    fun updateAddEventName(name: String) {
+        _uiState.update { it.copy(addEventName = name) }
+    }
+
+    fun updateAddEventType(type: DayOffType) {
+        _uiState.update { it.copy(addEventType = type) }
+    }
+
+    fun saveEvent() {
+        val state = _uiState.value
+        if (state.addEventName.isBlank()) return
+
+        viewModelScope.launch {
+            attendanceRepository.insertPlannedDayOff(
+                targetDate = state.addEventDate.toString(),
+                eventName = state.addEventName,
+                type = state.addEventType
+            )
+            _uiState.update { it.copy(showAddEventDialog = false) }
+            // Re-select the date to refresh the detail view
+            selectDate(state.addEventDate)
+        }
     }
 }

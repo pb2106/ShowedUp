@@ -2,16 +2,18 @@
 <resources>
     <string name="app_name">ShowedUp</string>
 
-    <!-- Onboarding -->
-    <string name="onboarding_title_1">Never Miss\nAnother Class</string>
-    <string name="onboarding_desc_1">ShowedUp automatically records your attendance so you can focus on learning.</string>
-    <string name="onboarding_title_2">Private &amp;\nSecure</string>
-    <string name="onboarding_desc_2">Your data stays on your device.\nNo servers, no accounts, no tracking.</string>
-    <string name="onboarding_title_3">Set Up\nYour Schedule</string>
-    <string name="onboarding_desc_3">Add your classes and ShowedUp will do the rest.</string>
-    <string name="onboarding_get_started">Get Started</string>
-    <string name="onboarding_next">Next</string>
-    <string name="onboarding_grant_permissions">Grant Permissions</string>
+    <!-- Permissions -->
+    <string name="permissions_title">ShowedUp needs\na few permissions</string>
+    <string name="permissions_subtitle">These let the app record your attendance automatically. Your data never leaves your device.</string>
+    <string name="permissions_grant">Grant Permissions</string>
+    <string name="permissions_continue">Continue Anyway</string>
+    <string name="permissions_location">Location — confirms you\'re in the classroom</string>
+    <string name="permissions_microphone">Microphone — captures an audio fingerprint of the room</string>
+    <string name="permissions_bluetooth">Bluetooth — detects nearby devices as a presence signal</string>
+    <string name="permissions_notifications">Notifications — reminds you when attendance is being recorded</string>
+    <string name="permissions_all_granted">All permissions granted!</string>
+    <string name="permissions_some_denied">Some signals won\'t be available — attendance proof will be weaker</string>
+    <string name="permissions_open_settings">Open Settings</string>
 
     <!-- Home -->
     <string name="home_title">Today</string>

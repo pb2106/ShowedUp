@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
@@ -22,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.showedup.app.data.entity.AttendanceRecordEntity
+import com.showedup.app.data.entity.DayOffType
+import com.showedup.app.data.entity.PlannedDayOffEntity
 import com.showedup.app.ui.components.*
 import com.showedup.app.ui.theme.*
 import java.time.DayOfWeek
@@ -51,6 +54,15 @@ fun CalendarScreen(
                     containerColor = MaterialTheme.colorScheme.background
                 )
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { viewModel.showAddEventDialog() },
+                containerColor = Emerald500,
+                contentColor = Gray950
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add Event")
+            }
         }
     ) { padding ->
         Column(
@@ -110,6 +122,7 @@ fun CalendarScreen(
                 yearMonth = uiState.currentMonth,
                 selectedDate = uiState.selectedDate,
                 attendanceDates = uiState.attendanceDates,
+                plannedEventDates = uiState.plannedEventDates,
                 onDateSelected = { viewModel.selectDate(it) },
                 modifier = Modifier.padding(horizontal = Spacing.screenHorizontal)
             )
@@ -137,7 +150,10 @@ fun CalendarScreen(
                     )
                     Spacer(modifier = Modifier.height(Spacing.sm))
 
-                    if (uiState.selectedDateRecords.isEmpty()) {
+                    val hasRecords = uiState.selectedDateRecords.isNotEmpty()
+                    val hasPlannedEvents = uiState.selectedDatePlannedEvents.isNotEmpty()
+
+                    if (!hasRecords && !hasPlannedEvents) {
                         Text(
                             text = "No records for this date",
                             style = MaterialTheme.typography.bodyMedium,
@@ -147,13 +163,57 @@ fun CalendarScreen(
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(Spacing.xs)
                         ) {
-                            items(uiState.selectedDateRecords) { record ->
-                                RecordItem(record)
+                            // Planned events section
+                            if (hasPlannedEvents) {
+                                item {
+                                    Text(
+                                        text = "Planned Events",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = WarningAmber,
+                                        modifier = Modifier.padding(bottom = 4.dp)
+                                    )
+                                }
+                                items(uiState.selectedDatePlannedEvents) { event ->
+                                    PlannedEventItem(event)
+                                }
+                            }
+                            // Attendance records section
+                            if (hasRecords) {
+                                item {
+                                    Text(
+                                        text = "Attendance Records",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Emerald500,
+                                        modifier = Modifier.padding(
+                                            top = if (hasPlannedEvents) 8.dp else 0.dp,
+                                            bottom = 4.dp
+                                        )
+                                    )
+                                }
+                                items(uiState.selectedDateRecords) { record ->
+                                    RecordItem(record)
+                                }
                             }
                         }
                     }
                 }
             }
+        }
+
+        // Add Event Dialog
+        if (uiState.showAddEventDialog) {
+            AddEventDialog(
+                date = uiState.addEventDate,
+                eventName = uiState.addEventName,
+                eventType = uiState.addEventType,
+                onDateChange = { viewModel.updateAddEventDate(it) },
+                onNameChange = { viewModel.updateAddEventName(it) },
+                onTypeChange = { viewModel.updateAddEventType(it) },
+                onDismiss = { viewModel.dismissAddEventDialog() },
+                onSave = { viewModel.saveEvent() }
+            )
         }
     }
 }
@@ -163,6 +223,7 @@ private fun CalendarGrid(
     yearMonth: YearMonth,
     selectedDate: LocalDate?,
     attendanceDates: Set<String>,
+    plannedEventDates: Set<String>,
     onDateSelected: (LocalDate) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -189,6 +250,7 @@ private fun CalendarGrid(
             val isToday = date == today
             val isSelected = date == selectedDate
             val hasRecord = dateStr in attendanceDates
+            val hasPlannedEvent = dateStr in plannedEventDates
 
             Box(
                 modifier = Modifier
@@ -213,15 +275,84 @@ private fun CalendarGrid(
                             else -> MaterialTheme.colorScheme.onSurface
                         }
                     )
-                    if (hasRecord && !isSelected) {
-                        Box(
-                            modifier = Modifier
-                                .size(4.dp)
-                                .clip(CircleShape)
-                                .background(Emerald500)
-                        )
+                    if (!isSelected && (hasRecord || hasPlannedEvent)) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (hasRecord) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(4.dp)
+                                        .clip(CircleShape)
+                                        .background(Emerald500)
+                                )
+                            }
+                            if (hasPlannedEvent) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(4.dp)
+                                        .clip(CircleShape)
+                                        .background(WarningAmber)
+                                )
+                            }
+                        }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlannedEventItem(event: PlannedDayOffEntity) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = CardShape,
+        color = WarningAmber.copy(alpha = 0.1f)
+    ) {
+        Row(
+            modifier = Modifier.padding(Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.Event,
+                contentDescription = null,
+                tint = WarningAmber,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = event.eventName,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = event.type.name.lowercase()
+                        .replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            val badgeColor = when (event.status) {
+                com.showedup.app.data.entity.PlannedDayOffStatus.PENDING -> WarningAmber
+                com.showedup.app.data.entity.PlannedDayOffStatus.CONFIRMED -> Emerald500
+                com.showedup.app.data.entity.PlannedDayOffStatus.CANCELLED -> ErrorRed
+            }
+            Box(
+                modifier = Modifier
+                    .clip(PillShape)
+                    .background(badgeColor.copy(alpha = 0.15f))
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = event.status.name.lowercase()
+                        .replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = badgeColor
+                )
             }
         }
     }
@@ -256,6 +387,126 @@ private fun RecordItem(record: AttendanceRecordEntity) {
                 dotSize = 6.dp,
                 spacing = 4.dp
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AddEventDialog(
+    date: LocalDate,
+    eventName: String,
+    eventType: DayOffType,
+    onDateChange: (LocalDate) -> Unit,
+    onNameChange: (String) -> Unit,
+    onTypeChange: (DayOffType) -> Unit,
+    onDismiss: () -> Unit,
+    onSave: () -> Unit
+) {
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("Add Event", fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                // Date picker trigger
+                Surface(
+                    onClick = { showDatePicker = true },
+                    shape = CardShape,
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(Spacing.sm),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.CalendarMonth,
+                            contentDescription = null,
+                            tint = Emerald500,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "${date.dayOfMonth} ${date.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${date.year}",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                // Event name
+                ShowedUpTextField(
+                    value = eventName,
+                    onValueChange = onNameChange,
+                    label = "Event Name"
+                )
+
+                // Event type chips
+                Text("Type", style = MaterialTheme.typography.labelMedium)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    val types = listOf(
+                        DayOffType.EVENT to "Event",
+                        DayOffType.HOLIDAY to "Holiday",
+                        DayOffType.PERSONAL to "Personal",
+                        DayOffType.SICK to "Sick"
+                    )
+                    items(types.size) { index ->
+                        val (type, label) = types[index]
+                        PillChip(
+                            label = label,
+                            selected = eventType == type,
+                            onClick = { onTypeChange(type) }
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            ShowedUpButton(
+                text = "Save",
+                onClick = onSave,
+                enabled = eventName.isNotBlank()
+            )
+        },
+        dismissButton = {
+            ShowedUpButton(
+                text = "Cancel",
+                onClick = onDismiss,
+                variant = ButtonVariant.GHOST
+            )
+        }
+    )
+
+    // Date picker dialog
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = date.toEpochDay() * 86400000L
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val selectedDate = LocalDate.ofEpochDay(millis / 86400000L)
+                        onDateChange(selectedDate)
+                    }
+                    showDatePicker = false
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
         }
     }
 }

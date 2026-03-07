@@ -1,11 +1,11 @@
 [
     {
-        "merged": "com.showedup.app-debug-78:/mipmap-hdpi_ic_launcher.png.flat",
-        "source": "com.showedup.app-main-80:/mipmap-hdpi/ic_launcher.png"
+        "merged": "com.showedup.app-debug-78:/xml_data_extraction_rules.xml.flat",
+        "source": "com.showedup.app-main-80:/xml/data_extraction_rules.xml"
     },
     {
-        "merged": "/home/naegleria/.gradle/daemon/8.5/com.showedup.app-debug-78:/xml_data_extraction_rules.xml.flat",
-        "source": "/home/naegleria/.gradle/daemon/8.5/com.showedup.app-main-80:/xml/data_extraction_rules.xml"
+        "merged": "com.showedup.app-debug-78:/mipmap-hdpi_ic_launcher.png.flat",
+        "source": "com.showedup.app-main-80:/mipmap-hdpi/ic_launcher.png"
     },
     {
         "merged": "com.showedup.app-debug-78:/mipmap-mdpi_ic_launcher_round.png.flat",
@@ -20,20 +20,16 @@
         "source": "com.showedup.app-main-80:/mipmap-mdpi/ic_launcher.png"
     },
     {
+        "merged": "com.showedup.app-debug-78:/xml_file_paths.xml.flat",
+        "source": "com.showedup.app-main-80:/xml/file_paths.xml"
+    },
+    {
         "merged": "com.showedup.app-debug-78:/mipmap-xxhdpi_ic_launcher_round.png.flat",
         "source": "com.showedup.app-main-80:/mipmap-xxhdpi/ic_launcher_round.png"
     },
     {
-        "merged": "/home/naegleria/.gradle/daemon/8.5/com.showedup.app-debug-78:/xml_network_security_config.xml.flat",
-        "source": "/home/naegleria/.gradle/daemon/8.5/com.showedup.app-main-80:/xml/network_security_config.xml"
-    },
-    {
         "merged": "com.showedup.app-debug-78:/mipmap-xhdpi_ic_launcher.png.flat",
         "source": "com.showedup.app-main-80:/mipmap-xhdpi/ic_launcher.png"
-    },
-    {
-        "merged": "/home/naegleria/.gradle/daemon/8.5/com.showedup.app-debug-78:/xml_file_paths.xml.flat",
-        "source": "/home/naegleria/.gradle/daemon/8.5/com.showedup.app-main-80:/xml/file_paths.xml"
     },
     {
         "merged": "com.showedup.app-debug-78:/mipmap-xxxhdpi_ic_launcher.png.flat",
@@ -46,6 +42,10 @@
     {
         "merged": "com.showedup.app-debug-78:/mipmap-xhdpi_ic_launcher_round.png.flat",
         "source": "com.showedup.app-main-80:/mipmap-xhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "com.showedup.app-debug-78:/xml_network_security_config.xml.flat",
+        "source": "com.showedup.app-main-80:/xml/network_security_config.xml"
     },
     {
         "merged": "com.showedup.app-debug-78:/mipmap-xxxhdpi_ic_launcher_round.png.flat",

@@ -320,13 +320,6 @@ private fun ClassCard(entry: TimetableEntry, isAttended: Boolean) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                if (entry.room.isNotBlank()) {
-                    Text(
-                        text = entry.room,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
             }
 
             StatusBadge(
