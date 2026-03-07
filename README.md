@@ -114,6 +114,8 @@ app/build/outputs/apk/debug/app-debug.apk
 ## Future
 - Easier class schedule generation
 - attendance percentage calculator
+- Tutorial to be changed
+- day and date shows in app
 
 ## License
 
