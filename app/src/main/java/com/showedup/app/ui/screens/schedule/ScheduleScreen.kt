@@ -412,7 +412,7 @@ private fun TimetableCell(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = entry.courseCode.ifBlank { entry.courseName },
+                        text = entry.courseName,
                         style = MaterialTheme.typography.labelSmall,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
@@ -421,9 +421,9 @@ private fun TimetableCell(
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
-                    if (entry.instructor.isNotBlank()) {
+                    if (entry.courseCode.isNotBlank()) {
                         Text(
-                            text = entry.instructor,
+                            text = entry.courseCode,
                             style = MaterialTheme.typography.labelSmall,
                             fontSize = 7.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
