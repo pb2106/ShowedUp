@@ -521,7 +521,7 @@ public final class DaggerShowedUpApplication_HiltComponents_SingletonC {
           return (T) new HomeViewModel(singletonCImpl.scheduleRepositoryProvider.get(), singletonCImpl.attendanceRepositoryProvider.get());
 
           case 5: // com.showedup.app.ui.screens.schedule.ScheduleViewModel 
-          return (T) new ScheduleViewModel(singletonCImpl.scheduleRepositoryProvider.get());
+          return (T) new ScheduleViewModel(singletonCImpl.scheduleRepositoryProvider.get(), ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
 
           default: throw new AssertionError(id);
         }

@@ -1,5 +1,6 @@
 package com.showedup.app.ui.screens.schedule;
 
+import android.content.Context;
 import com.showedup.app.data.repository.ScheduleRepository;
 import dagger.internal.DaggerGenerated;
 import dagger.internal.Factory;
@@ -9,7 +10,7 @@ import javax.annotation.processing.Generated;
 import javax.inject.Provider;
 
 @ScopeMetadata
-@QualifierMetadata
+@QualifierMetadata("dagger.hilt.android.qualifiers.ApplicationContext")
 @DaggerGenerated
 @Generated(
     value = "dagger.internal.codegen.ComponentProcessor",
@@ -27,21 +28,27 @@ import javax.inject.Provider;
 public final class ScheduleViewModel_Factory implements Factory<ScheduleViewModel> {
   private final Provider<ScheduleRepository> scheduleRepositoryProvider;
 
-  public ScheduleViewModel_Factory(Provider<ScheduleRepository> scheduleRepositoryProvider) {
+  private final Provider<Context> appContextProvider;
+
+  public ScheduleViewModel_Factory(Provider<ScheduleRepository> scheduleRepositoryProvider,
+      Provider<Context> appContextProvider) {
     this.scheduleRepositoryProvider = scheduleRepositoryProvider;
+    this.appContextProvider = appContextProvider;
   }
 
   @Override
   public ScheduleViewModel get() {
-    return newInstance(scheduleRepositoryProvider.get());
+    return newInstance(scheduleRepositoryProvider.get(), appContextProvider.get());
   }
 
   public static ScheduleViewModel_Factory create(
-      Provider<ScheduleRepository> scheduleRepositoryProvider) {
-    return new ScheduleViewModel_Factory(scheduleRepositoryProvider);
+      Provider<ScheduleRepository> scheduleRepositoryProvider,
+      Provider<Context> appContextProvider) {
+    return new ScheduleViewModel_Factory(scheduleRepositoryProvider, appContextProvider);
   }
 
-  public static ScheduleViewModel newInstance(ScheduleRepository scheduleRepository) {
-    return new ScheduleViewModel(scheduleRepository);
+  public static ScheduleViewModel newInstance(ScheduleRepository scheduleRepository,
+      Context appContext) {
+    return new ScheduleViewModel(scheduleRepository, appContext);
   }
 }

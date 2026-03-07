@@ -47,6 +47,10 @@ fun ScheduleScreen(
                     }
                 },
                 actions = {
+                    // Edit time slots button
+                    IconButton(onClick = { viewModel.showSlotEditor() }) {
+                        Icon(Icons.Default.EditCalendar, "Edit Periods")
+                    }
                     IconButton(onClick = { viewModel.showAddDialog() }) {
                         Icon(Icons.Default.Add, "Add Class")
                     }
@@ -62,7 +66,7 @@ fun ScheduleScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Day toggles — for marking active/inactive days
+            // Day toggles
             Text(
                 text = "Active Days",
                 style = MaterialTheme.typography.titleSmall,
@@ -107,12 +111,12 @@ fun ScheduleScreen(
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
             )
 
-            // Timetable grid — horizontally scrollable
+            // Timetable grid
             if (uiState.classes.isEmpty() && !uiState.isLoading) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f),
+                        .padding(Spacing.xxl),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -124,22 +128,15 @@ fun ScheduleScreen(
                         )
                         Spacer(modifier = Modifier.height(Spacing.md))
                         Text(
-                            "No classes set up yet",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(Spacing.sm))
-                        Text(
-                            "Tap + to add your first class,\nor tap any cell in the table below",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            "Tap any cell to add a class",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
                         )
                     }
                 }
             }
 
-            // THE TIMETABLE GRID
             TimetableGrid(
                 classes = uiState.classes,
                 timeSlots = uiState.timeSlots,
@@ -159,7 +156,7 @@ fun ScheduleScreen(
             )
         }
 
-        // Add/Edit dialog
+        // Add/Edit class dialog
         if (uiState.showAddDialog) {
             AddClassDialog(
                 editEntry = uiState.editingEntry,
@@ -171,14 +168,24 @@ fun ScheduleScreen(
                 }
             )
         }
+
+        // Slot editor dialog
+        if (uiState.showSlotEditor) {
+            SlotEditorDialog(
+                timeSlots = uiState.timeSlots,
+                editingIndex = uiState.editingSlotIndex,
+                onAddSlot = { viewModel.addSlot(it) },
+                onUpdateSlot = { i, s -> viewModel.updateSlot(i, s) },
+                onDeleteSlot = { viewModel.deleteSlot(it) },
+                onEditSlot = { viewModel.showSlotEditor(it) },
+                onDismiss = { viewModel.dismissSlotEditor() }
+            )
+        }
     }
 }
 
-/**
- * College-style timetable grid.
- * Rows = days (Mon–Sat), Columns = time slots.
- * Horizontally scrollable. Each cell shows the class or is empty (tappable).
- */
+// ─── Timetable Grid ─────────────────────────────────────────────
+
 @Composable
 private fun TimetableGrid(
     classes: List<TimetableEntry>,
@@ -196,11 +203,11 @@ private fun TimetableGrid(
 
     val dayLabelWidth = 48.dp
     val cellWidth = 90.dp
+    val breakCellWidth = 44.dp
     val cellHeight = 64.dp
-    val headerHeight = 40.dp
+    val headerHeight = 48.dp
 
     val grouped = classes.groupBy { it.dayOfWeek }
-
     val scrollState = rememberScrollState()
     val verticalScrollState = rememberScrollState()
 
@@ -211,7 +218,6 @@ private fun TimetableGrid(
                 .fillMaxWidth()
                 .padding(start = Spacing.screenHorizontal)
         ) {
-            // Corner spacer
             Box(
                 modifier = Modifier
                     .width(dayLabelWidth)
@@ -226,35 +232,40 @@ private fun TimetableGrid(
                 )
             }
 
-            Row(
-                modifier = Modifier
-                    .horizontalScroll(scrollState)
-            ) {
-                timeSlots.forEachIndexed { index, slot ->
+            Row(modifier = Modifier.horizontalScroll(scrollState)) {
+                timeSlots.forEach { slot ->
+                    val w = if (slot.isBreak) breakCellWidth else cellWidth
                     Box(
                         modifier = Modifier
-                            .width(cellWidth)
+                            .width(w)
                             .height(headerHeight)
                             .border(
                                 0.5.dp,
                                 MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
+                            )
+                            .then(
+                                if (slot.isBreak) Modifier.background(
+                                    WarningAmber.copy(alpha = 0.06f)
+                                ) else Modifier
                             ),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = slot.label,
                             style = MaterialTheme.typography.labelSmall,
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = if (slot.isBreak) 8.sp else 10.sp,
+                            color = if (slot.isBreak) WarningAmber.copy(alpha = 0.7f)
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
-                            maxLines = 1
+                            maxLines = 2,
+                            lineHeight = 11.sp
                         )
                     }
                 }
             }
         }
 
-        // Grid rows (one per day)
+        // Grid rows
         Column(
             modifier = Modifier
                 .verticalScroll(verticalScrollState)
@@ -290,27 +301,39 @@ private fun TimetableGrid(
                         )
                     }
 
-                    // Cells — horizontally scroll in sync with header
-                    Row(
-                        modifier = Modifier
-                            .horizontalScroll(scrollState)
-                    ) {
+                    // Cells
+                    Row(modifier = Modifier.horizontalScroll(scrollState)) {
                         timeSlots.forEachIndexed { slotIndex, slot ->
-                            val matchingEntry = dayClasses.find { entry ->
-                                // A class matches this slot if their time ranges overlap
-                                entry.startTimeMinutes < slot.endTimeMinutes &&
-                                        entry.endTimeMinutes > slot.startTimeMinutes
-                            }
+                            val w = if (slot.isBreak) breakCellWidth else cellWidth
 
-                            TimetableCell(
-                                entry = matchingEntry,
-                                isActive = isActive,
-                                width = cellWidth,
-                                height = cellHeight,
-                                onEmptyTap = { onCellTap(day, slotIndex) },
-                                onEntryTap = { onEntryTap(matchingEntry!!) },
-                                onDelete = { onEntryDelete(matchingEntry!!) }
-                            )
+                            if (slot.isBreak) {
+                                // Break cell — just show a hatch/tint, no class
+                                Box(
+                                    modifier = Modifier
+                                        .width(w)
+                                        .height(cellHeight)
+                                        .background(WarningAmber.copy(alpha = 0.04f))
+                                        .border(
+                                            0.5.dp,
+                                            MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+                                        )
+                                )
+                            } else {
+                                val matchingEntry = dayClasses.find { entry ->
+                                    entry.startTimeMinutes < slot.endTimeMinutes &&
+                                            entry.endTimeMinutes > slot.startTimeMinutes
+                                }
+
+                                TimetableCell(
+                                    entry = matchingEntry,
+                                    isActive = isActive,
+                                    width = w,
+                                    height = cellHeight,
+                                    onEmptyTap = { onCellTap(day, slotIndex) },
+                                    onEntryTap = { onEntryTap(matchingEntry!!) },
+                                    onDelete = { onEntryDelete(matchingEntry!!) }
+                                )
+                            }
                         }
                     }
                 }
@@ -333,7 +356,6 @@ private fun TimetableCell(
     var showDeleteOption by remember { mutableStateOf(false) }
 
     val cellColor = if (entry != null) {
-        // Assign color based on course name hash for visual distinction
         val colorIndex = (entry.courseName.hashCode() and 0x7FFFFFFF) % cellColors.size
         cellColors[colorIndex].copy(alpha = if (isActive) 0.18f else 0.08f)
     } else {
@@ -359,9 +381,7 @@ private fun TimetableCell(
                     if (entry != null) {
                         if (showDeleteOption) showDeleteOption = false
                         else onEntryTap()
-                    } else {
-                        onEmptyTap()
-                    }
+                    } else onEmptyTap()
                 },
                 onLongClick = {
                     if (entry != null) showDeleteOption = !showDeleteOption
@@ -415,7 +435,6 @@ private fun TimetableCell(
                 }
             }
         } else if (isActive) {
-            // Empty active cell — show a faint + 
             Icon(
                 Icons.Default.Add,
                 contentDescription = "Add class",
@@ -426,19 +445,12 @@ private fun TimetableCell(
     }
 }
 
-// Distinct colors for different courses
 private val cellColors = listOf(
-    SignalGps,      // cyan
-    SignalWifi,     // indigo
-    SignalBluetooth,// teal
-    SignalAudio,    // orange
-    SignalSensor,   // pink
-    Emerald500,     // green
-    Violet500,      // purple
-    StatusHoliday,  // blue
-    WarningAmber,   // amber
-    StatusAbsent,   // red
+    SignalGps, SignalWifi, SignalBluetooth, SignalAudio, SignalSensor,
+    Emerald500, Violet500, StatusHoliday, WarningAmber, StatusAbsent,
 )
+
+// ─── Add/Edit Class Dialog ──────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -462,36 +474,19 @@ private fun AddClassDialog(
         )
     }
     var startHour by remember {
-        mutableIntStateOf(
-            editEntry?.let { it.startTimeMinutes / 60 }
-                ?: prefilledSlot?.startHour
-                ?: 9
-        )
+        mutableIntStateOf(editEntry?.let { it.startTimeMinutes / 60 } ?: prefilledSlot?.startHour ?: 9)
     }
     var startMinute by remember {
-        mutableIntStateOf(
-            editEntry?.let { it.startTimeMinutes % 60 }
-                ?: prefilledSlot?.startMinute
-                ?: 0
-        )
+        mutableIntStateOf(editEntry?.let { it.startTimeMinutes % 60 } ?: prefilledSlot?.startMinute ?: 0)
     }
     var endHour by remember {
-        mutableIntStateOf(
-            editEntry?.let { it.endTimeMinutes / 60 }
-                ?: prefilledSlot?.endHour
-                ?: 10
-        )
+        mutableIntStateOf(editEntry?.let { it.endTimeMinutes / 60 } ?: prefilledSlot?.endHour ?: 10)
     }
     var endMinute by remember {
-        mutableIntStateOf(
-            editEntry?.let { it.endTimeMinutes % 60 }
-                ?: prefilledSlot?.endMinute
-                ?: 0
-        )
+        mutableIntStateOf(editEntry?.let { it.endTimeMinutes % 60 } ?: prefilledSlot?.endMinute ?: 0)
     }
     var instructor by remember { mutableStateOf(editEntry?.instructor ?: "") }
 
-    // Time picker states
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
 
@@ -516,7 +511,6 @@ private fun AddClassDialog(
                     label = "Course Code"
                 )
 
-                // Day selector
                 Text(
                     if (isEditing) "Day" else "Days (select multiple)",
                     style = MaterialTheme.typography.labelMedium
@@ -527,9 +521,8 @@ private fun AddClassDialog(
                             label = day.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
                             selected = day in selectedDays,
                             onClick = {
-                                selectedDays = if (isEditing) {
-                                    setOf(day)
-                                } else {
+                                selectedDays = if (isEditing) setOf(day)
+                                else {
                                     if (day in selectedDays) selectedDays - day
                                     else selectedDays + day
                                 }
@@ -538,23 +531,17 @@ private fun AddClassDialog(
                     }
                 }
 
-                // Time — tappable to open time picker
+                // Time — tappable with 12h display
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     Surface(
                         onClick = { showStartTimePicker = true },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(
-                            1.dp,
-                            MaterialTheme.colorScheme.outline
-                        ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                         color = MaterialTheme.colorScheme.surface
                     ) {
                         Column(
-                            modifier = Modifier.padding(
-                                horizontal = Spacing.md,
-                                vertical = Spacing.sm
-                            )
+                            modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm)
                         ) {
                             Text(
                                 "Start",
@@ -562,7 +549,7 @@ private fun AddClassDialog(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                "%02d:%02d".format(startHour, startMinute),
+                                formatTime12(startHour, startMinute),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -572,17 +559,11 @@ private fun AddClassDialog(
                         onClick = { showEndTimePicker = true },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(
-                            1.dp,
-                            MaterialTheme.colorScheme.outline
-                        ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                         color = MaterialTheme.colorScheme.surface
                     ) {
                         Column(
-                            modifier = Modifier.padding(
-                                horizontal = Spacing.md,
-                                vertical = Spacing.sm
-                            )
+                            modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm)
                         ) {
                             Text(
                                 "End",
@@ -590,7 +571,7 @@ private fun AddClassDialog(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                "%02d:%02d".format(endHour, endMinute),
+                                formatTime12(endHour, endMinute),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -610,88 +591,319 @@ private fun AddClassDialog(
                 text = "Save",
                 onClick = {
                     if (courseName.isNotBlank() && selectedDays.isNotEmpty()) {
-                        onSave(
-                            courseName, courseCode, selectedDays,
-                            startHour, startMinute, endHour, endMinute,
-                            instructor
-                        )
+                        onSave(courseName, courseCode, selectedDays, startHour, startMinute, endHour, endMinute, instructor)
                     }
                 },
                 enabled = courseName.isNotBlank() && selectedDays.isNotEmpty()
             )
         },
         dismissButton = {
-            ShowedUpButton(
-                text = "Cancel",
-                onClick = onDismiss,
-                variant = ButtonVariant.GHOST
-            )
+            ShowedUpButton(text = "Cancel", onClick = onDismiss, variant = ButtonVariant.GHOST)
         }
     )
 
-    // Start time picker dialog
+    // Time pickers — 12h format
     if (showStartTimePicker) {
-        val timePickerState = rememberTimePickerState(
+        TimePickerDialog(
+            title = "Start Time",
             initialHour = startHour,
             initialMinute = startMinute,
-            is24Hour = true
-        )
-        AlertDialog(
-            onDismissRequest = { showStartTimePicker = false },
-            title = { Text("Start Time") },
-            text = {
-                TimePicker(state = timePickerState)
-            },
-            confirmButton = {
-                ShowedUpButton(
-                    text = "OK",
-                    onClick = {
-                        startHour = timePickerState.hour
-                        startMinute = timePickerState.minute
-                        showStartTimePicker = false
-                    }
-                )
-            },
-            dismissButton = {
-                ShowedUpButton(
-                    text = "Cancel",
-                    onClick = { showStartTimePicker = false },
-                    variant = ButtonVariant.GHOST
-                )
-            }
+            onConfirm = { h, m -> startHour = h; startMinute = m; showStartTimePicker = false },
+            onDismiss = { showStartTimePicker = false }
         )
     }
-
-    // End time picker dialog
     if (showEndTimePicker) {
-        val timePickerState = rememberTimePickerState(
+        TimePickerDialog(
+            title = "End Time",
             initialHour = endHour,
             initialMinute = endMinute,
-            is24Hour = true
-        )
-        AlertDialog(
-            onDismissRequest = { showEndTimePicker = false },
-            title = { Text("End Time") },
-            text = {
-                TimePicker(state = timePickerState)
-            },
-            confirmButton = {
-                ShowedUpButton(
-                    text = "OK",
-                    onClick = {
-                        endHour = timePickerState.hour
-                        endMinute = timePickerState.minute
-                        showEndTimePicker = false
-                    }
-                )
-            },
-            dismissButton = {
-                ShowedUpButton(
-                    text = "Cancel",
-                    onClick = { showEndTimePicker = false },
-                    variant = ButtonVariant.GHOST
-                )
-            }
+            onConfirm = { h, m -> endHour = h; endMinute = m; showEndTimePicker = false },
+            onDismiss = { showEndTimePicker = false }
         )
     }
+}
+
+// ─── Slot Editor Dialog ─────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SlotEditorDialog(
+    timeSlots: List<TimeSlot>,
+    editingIndex: Int?,
+    onAddSlot: (TimeSlot) -> Unit,
+    onUpdateSlot: (Int, TimeSlot) -> Unit,
+    onDeleteSlot: (Int) -> Unit,
+    onEditSlot: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    // If editing a specific slot, show the edit form
+    if (editingIndex != null) {
+        val slot = timeSlots.getOrNull(editingIndex) ?: return
+        SlotEditForm(
+            slot = slot,
+            onSave = { updated -> onUpdateSlot(editingIndex, updated) },
+            onDismiss = onDismiss
+        )
+        return
+    }
+
+    // Otherwise show the slot list with add option
+    var showAddForm by remember { mutableStateOf(false) }
+
+    if (showAddForm) {
+        SlotEditForm(
+            slot = null,
+            onSave = { onAddSlot(it); showAddForm = false },
+            onDismiss = { showAddForm = false }
+        )
+        return
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Periods", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                Text(
+                    "Tap a period to edit, swipe left to delete",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(Spacing.xs))
+
+                val scrollState = rememberScrollState()
+                Column(
+                    modifier = Modifier
+                        .heightIn(max = 300.dp)
+                        .verticalScroll(scrollState),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.xxs)
+                ) {
+                    timeSlots.forEachIndexed { index, slot ->
+                        Surface(
+                            onClick = { onEditSlot(index) },
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (slot.isBreak) WarningAmber.copy(alpha = 0.08f)
+                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            border = BorderStroke(
+                                0.5.dp,
+                                if (slot.isBreak) WarningAmber.copy(alpha = 0.2f)
+                                else MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = Spacing.sm, vertical = Spacing.xs),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = if (slot.isBreak) slot.breakLabel.replace("\n", " ")
+                                        else "Period ${index + 1}",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (slot.isBreak) WarningAmber
+                                        else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = slot.rangeLabel,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                IconButton(
+                                    onClick = { onDeleteSlot(index) },
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = "Delete",
+                                        tint = ErrorRed.copy(alpha = 0.6f),
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            ShowedUpButton(
+                text = "Add Period",
+                onClick = { showAddForm = true },
+                variant = ButtonVariant.OUTLINED,
+                icon = {
+                    Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
+                }
+            )
+        },
+        dismissButton = {
+            ShowedUpButton(text = "Done", onClick = onDismiss, variant = ButtonVariant.PRIMARY)
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SlotEditForm(
+    slot: TimeSlot?,
+    onSave: (TimeSlot) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val isNew = slot == null
+    var sh by remember { mutableIntStateOf(slot?.startHour ?: 9) }
+    var sm by remember { mutableIntStateOf(slot?.startMinute ?: 0) }
+    var eh by remember { mutableIntStateOf(slot?.endHour ?: 10) }
+    var em by remember { mutableIntStateOf(slot?.endMinute ?: 0) }
+    var isBreak by remember { mutableStateOf(slot?.isBreak ?: false) }
+    var breakLabel by remember { mutableStateOf(slot?.breakLabel?.replace("\n", " ") ?: "Break") }
+
+    var showStartPicker by remember { mutableStateOf(false) }
+    var showEndPicker by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                if (isNew) "Add Period" else "Edit Period",
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                // Start/End time
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    Surface(
+                        onClick = { showStartPicker = true },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        Column(modifier = Modifier.padding(Spacing.sm)) {
+                            Text("Start", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(formatTime12(sh, sm), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                    Surface(
+                        onClick = { showEndPicker = true },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        Column(modifier = Modifier.padding(Spacing.sm)) {
+                            Text("End", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(formatTime12(eh, em), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+
+                // Break toggle
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "This is a break",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Switch(
+                        checked = isBreak,
+                        onCheckedChange = { isBreak = it },
+                        colors = SwitchDefaults.colors(
+                            checkedTrackColor = WarningAmber,
+                            checkedThumbColor = White
+                        )
+                    )
+                }
+
+                if (isBreak) {
+                    ShowedUpTextField(
+                        value = breakLabel,
+                        onValueChange = { breakLabel = it },
+                        label = "Break Name"
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            ShowedUpButton(
+                text = "Save",
+                onClick = {
+                    onSave(
+                        TimeSlot(
+                            startHour = sh, startMinute = sm,
+                            endHour = eh, endMinute = em,
+                            isBreak = isBreak,
+                            breakLabel = if (isBreak) breakLabel else ""
+                        )
+                    )
+                }
+            )
+        },
+        dismissButton = {
+            ShowedUpButton(text = "Cancel", onClick = onDismiss, variant = ButtonVariant.GHOST)
+        }
+    )
+
+    if (showStartPicker) {
+        TimePickerDialog(
+            title = "Start Time",
+            initialHour = sh, initialMinute = sm,
+            onConfirm = { h, m -> sh = h; sm = m; showStartPicker = false },
+            onDismiss = { showStartPicker = false }
+        )
+    }
+    if (showEndPicker) {
+        TimePickerDialog(
+            title = "End Time",
+            initialHour = eh, initialMinute = em,
+            onConfirm = { h, m -> eh = h; em = m; showEndPicker = false },
+            onDismiss = { showEndPicker = false }
+        )
+    }
+}
+
+// ─── Shared Time Picker Dialog (12h format) ─────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimePickerDialog(
+    title: String,
+    initialHour: Int,
+    initialMinute: Int,
+    onConfirm: (Int, Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val state = rememberTimePickerState(
+        initialHour = initialHour,
+        initialMinute = initialMinute,
+        is24Hour = false
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = { TimePicker(state = state) },
+        confirmButton = {
+            ShowedUpButton(
+                text = "OK",
+                onClick = { onConfirm(state.hour, state.minute) }
+            )
+        },
+        dismissButton = {
+            ShowedUpButton(text = "Cancel", onClick = onDismiss, variant = ButtonVariant.GHOST)
+        }
+    )
+}
+
+// ─── Helpers ────────────────────────────────────────────────────
+
+private fun formatTime12(hour: Int, minute: Int): String {
+    val h12 = if (hour > 12) hour - 12 else if (hour == 0) 12 else hour
+    val ampm = if (hour >= 12) "PM" else "AM"
+    return if (minute == 0) "$h12:00 $ampm"
+    else "%d:%02d %s".format(h12, minute, ampm)
 }
