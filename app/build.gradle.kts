@@ -1,9 +1,19 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
+}
+
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties()
+
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
@@ -20,20 +30,32 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file(keystoreProperties["storeFile"] as String)
+            storePassword = keystoreProperties["storePassword"] as String
+            keyAlias = keystoreProperties["keyAlias"] as String
+            keyPassword = keystoreProperties["keyPassword"] as String
+        }
+    }
+
     buildTypes {
         debug {
             isMinifyEnabled = false
-            // Emulator allowed in debug only
             buildConfigField("Boolean", "ALLOW_EMULATOR", "true")
         }
+
         release {
+            signingConfig = signingConfigs.getByName("release")
+
             isMinifyEnabled = true
             isShrinkResources = true
+
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // R8 full mode for obfuscation per PRD NFR-SEC-08
+
             buildConfigField("Boolean", "ALLOW_EMULATOR", "false")
         }
     }
@@ -60,6 +82,7 @@ android {
 }
 
 dependencies {
+
     // Core
     implementation(libs.core.ktx)
     implementation(libs.activity.compose)
@@ -83,7 +106,7 @@ dependencies {
     // Navigation
     implementation(libs.navigation.compose)
 
-    // Hilt DI
+    // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
@@ -97,7 +120,7 @@ dependencies {
     implementation(libs.work.runtime.ktx)
     implementation(libs.work.hilt)
 
-    // Accompanist Permissions
+    // Permissions
     implementation(libs.accompanist.permissions)
 
     // Lottie
@@ -113,18 +136,21 @@ dependencies {
     implementation(libs.coroutines.android)
     implementation(libs.coroutines.core)
 
-    // Location Services
+    // Location
     implementation(libs.play.services.location)
 
     // Testing
     testImplementation(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)
     testImplementation(libs.mockk)
+
     androidTestImplementation(libs.mockk.android)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.test.runner)
     androidTestImplementation(libs.test.ext)
+
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.ui.test)
+
     debugImplementation(libs.compose.ui.test.manifest)
 }
