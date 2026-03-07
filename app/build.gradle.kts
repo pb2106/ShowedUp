@@ -139,6 +139,10 @@ dependencies {
     // Location
     implementation(libs.play.services.location)
 
+    // Coil — image loading + SVG support
+    implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation("io.coil-kt:coil-svg:2.6.0")
+
     // Testing
     testImplementation(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <filter id="neonGlow">
+      <feGaussianBlur stdDeviation="3" result="blur1"/>
+      <feGaussianBlur stdDeviation="8" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="soft">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="120" height="120" fill="#080A0C" rx="24"/>
+
+  <g transform="translate(60, 60)">
+    <!-- Outer ring -->
+    <circle cx="0" cy="0" r="46" fill="none" stroke="#00FFB2" stroke-width="2.2" opacity="0.9" filter="url(#soft)"/>
+    <!-- Inner ring -->
+    <circle cx="0" cy="0" r="37" fill="none" stroke="#00FFB2" stroke-width="0.8" opacity="0.25"/>
+
+    <!-- Angular S mark -->
+    <path d="M -15,-20 L 15,-20 L 15,-7 L -15,-7 L -15,7 L 15,7 L 15,20 L -15,20"
+      fill="none"
+      stroke="#00FFB2"
+      stroke-width="5"
+      stroke-linecap="square"
+      stroke-linejoin="miter"
+      filter="url(#neonGlow)"/>
+
+    <!-- Tick marks on ring -->
+    <line x1="0" y1="-46" x2="0" y2="-37" stroke="#00FFB2" stroke-width="2.5" opacity="0.7"/>
+    <line x1="46" y1="0" x2="37" y2="0" stroke="#00FFB2" stroke-width="2.5" opacity="0.7"/>
+
+    <!-- Center dot -->
+    <circle cx="0" cy="0" r="3.5" fill="#00FFB2" opacity="0.5" filter="url(#soft)"/>
+  </g>
+</svg>
