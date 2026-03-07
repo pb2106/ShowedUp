@@ -40,6 +40,8 @@ fun CalendarScreen(
     viewModel: CalendarViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val today = LocalDate.now()
+    val selectedIsNotPast = uiState.selectedDate == null || !uiState.selectedDate!!.isBefore(today)
 
     Scaffold(
         topBar = {
@@ -56,12 +58,15 @@ fun CalendarScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { viewModel.showAddEventDialog() },
-                containerColor = Emerald500,
-                contentColor = Gray950
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Event")
+            // Only show FAB if selected date is today or in the future
+            if (selectedIsNotPast) {
+                FloatingActionButton(
+                    onClick = { viewModel.showAddEventDialog() },
+                    containerColor = Emerald500,
+                    contentColor = Gray950
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Event")
+                }
             }
         }
     ) { padding ->
@@ -175,7 +180,14 @@ fun CalendarScreen(
                                     )
                                 }
                                 items(uiState.selectedDatePlannedEvents) { event ->
-                                    PlannedEventItem(event)
+                                    val eventDate = LocalDate.parse(event.targetDate)
+                                    val canModify = !eventDate.isBefore(today)
+                                    PlannedEventItem(
+                                        event = event,
+                                        canModify = canModify,
+                                        onEdit = { viewModel.showEditEventDialog(event) },
+                                        onDelete = { viewModel.deleteEvent(event) }
+                                    )
                                 }
                             }
                             // Attendance records section
@@ -202,9 +214,10 @@ fun CalendarScreen(
             }
         }
 
-        // Add Event Dialog
+        // Add/Edit Event Dialog
         if (uiState.showAddEventDialog) {
             AddEventDialog(
+                isEditing = uiState.editingEvent != null,
                 date = uiState.addEventDate,
                 eventName = uiState.addEventName,
                 eventType = uiState.addEventType,
@@ -305,7 +318,12 @@ private fun CalendarGrid(
 }
 
 @Composable
-private fun PlannedEventItem(event: PlannedDayOffEntity) {
+private fun PlannedEventItem(
+    event: PlannedDayOffEntity,
+    canModify: Boolean,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = CardShape,
@@ -335,6 +353,32 @@ private fun PlannedEventItem(event: PlannedDayOffEntity) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+
+            if (canModify) {
+                IconButton(
+                    onClick = onEdit,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Edit",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = ErrorRed.copy(alpha = 0.7f),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+
             val badgeColor = when (event.status) {
                 com.showedup.app.data.entity.PlannedDayOffStatus.PENDING -> WarningAmber
                 com.showedup.app.data.entity.PlannedDayOffStatus.CONFIRMED -> Emerald500
@@ -394,6 +438,7 @@ private fun RecordItem(record: AttendanceRecordEntity) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddEventDialog(
+    isEditing: Boolean,
     date: LocalDate,
     eventName: String,
     eventType: DayOffType,
@@ -404,11 +449,15 @@ private fun AddEventDialog(
     onSave: () -> Unit
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
+    val today = LocalDate.now()
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("Add Event", fontWeight = FontWeight.Bold)
+            Text(
+                if (isEditing) "Edit Event" else "Add Event",
+                fontWeight = FontWeight.Bold
+            )
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
@@ -482,10 +531,16 @@ private fun AddEventDialog(
         }
     )
 
-    // Date picker dialog
+    // Date picker dialog — blocks past dates
     if (showDatePicker) {
+        val todayMillis = today.toEpochDay() * 86400000L
         val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = date.toEpochDay() * 86400000L
+            initialSelectedDateMillis = date.toEpochDay() * 86400000L,
+            selectableDates = object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                    return utcTimeMillis >= todayMillis
+                }
+            }
         )
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
@@ -493,7 +548,9 @@ private fun AddEventDialog(
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
                         val selectedDate = LocalDate.ofEpochDay(millis / 86400000L)
-                        onDateChange(selectedDate)
+                        if (!selectedDate.isBefore(today)) {
+                            onDateChange(selectedDate)
+                        }
                     }
                     showDatePicker = false
                 }) {

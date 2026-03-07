@@ -171,4 +171,10 @@ class AttendanceRepository @Inject constructor(
         )
         return plannedDayOffDao.insert(record)
     }
+
+    suspend fun updatePlannedDayOff(entity: PlannedDayOffEntity) =
+        plannedDayOffDao.update(entity)
+
+    suspend fun deletePlannedDayOff(entity: PlannedDayOffEntity) =
+        plannedDayOffDao.delete(entity)
 }

@@ -40,6 +40,8 @@ public final class PlannedDayOffDao_Impl implements PlannedDayOffDao {
 
   private final Converters __converters = new Converters();
 
+  private final EntityDeletionOrUpdateAdapter<PlannedDayOffEntity> __deletionAdapterOfPlannedDayOffEntity;
+
   private final EntityDeletionOrUpdateAdapter<PlannedDayOffEntity> __updateAdapterOfPlannedDayOffEntity;
 
   public PlannedDayOffDao_Impl(@NonNull final RoomDatabase __db) {
@@ -68,6 +70,19 @@ public final class PlannedDayOffDao_Impl implements PlannedDayOffDao {
         } else {
           statement.bindString(8, entity.getPreviousChainHash());
         }
+      }
+    };
+    this.__deletionAdapterOfPlannedDayOffEntity = new EntityDeletionOrUpdateAdapter<PlannedDayOffEntity>(__db) {
+      @Override
+      @NonNull
+      protected String createQuery() {
+        return "DELETE FROM `planned_day_offs` WHERE `id` = ?";
+      }
+
+      @Override
+      protected void bind(@NonNull final SupportSQLiteStatement statement,
+          @NonNull final PlannedDayOffEntity entity) {
+        statement.bindLong(1, entity.getId());
       }
     };
     this.__updateAdapterOfPlannedDayOffEntity = new EntityDeletionOrUpdateAdapter<PlannedDayOffEntity>(__db) {
@@ -111,6 +126,25 @@ public final class PlannedDayOffDao_Impl implements PlannedDayOffDao {
           final Long _result = __insertionAdapterOfPlannedDayOffEntity.insertAndReturnId(record);
           __db.setTransactionSuccessful();
           return _result;
+        } finally {
+          __db.endTransaction();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object delete(final PlannedDayOffEntity record,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        __db.beginTransaction();
+        try {
+          __deletionAdapterOfPlannedDayOffEntity.handle(record);
+          __db.setTransactionSuccessful();
+          return Unit.INSTANCE;
         } finally {
           __db.endTransaction();
         }

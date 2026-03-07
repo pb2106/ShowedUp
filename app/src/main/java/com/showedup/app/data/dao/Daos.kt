@@ -81,6 +81,9 @@ interface PlannedDayOffDao {
     @Update
     suspend fun update(record: PlannedDayOffEntity)
 
+    @Delete
+    suspend fun delete(record: PlannedDayOffEntity)
+
     @Query("SELECT * FROM planned_day_offs WHERE status = 'PENDING' ORDER BY targetDate")
     fun getPending(): Flow<List<PlannedDayOffEntity>>
 

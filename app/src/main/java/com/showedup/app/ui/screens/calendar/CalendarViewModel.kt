@@ -24,6 +24,7 @@ data class CalendarUiState(
     val selectedDatePlannedEvents: List<PlannedDayOffEntity> = emptyList(),
     val isLoading: Boolean = true,
     val showAddEventDialog: Boolean = false,
+    val editingEvent: PlannedDayOffEntity? = null,
     val addEventDate: LocalDate = LocalDate.now(),
     val addEventName: String = "",
     val addEventType: DayOffType = DayOffType.EVENT
@@ -93,21 +94,38 @@ class CalendarViewModel @Inject constructor(
 
     fun showAddEventDialog() {
         val prefilledDate = _uiState.value.selectedDate ?: LocalDate.now()
+        // If selected date is in the past, default to today
+        val safeDate = if (prefilledDate.isBefore(LocalDate.now())) LocalDate.now() else prefilledDate
         _uiState.update {
             it.copy(
                 showAddEventDialog = true,
-                addEventDate = prefilledDate,
+                editingEvent = null,
+                addEventDate = safeDate,
                 addEventName = "",
                 addEventType = DayOffType.EVENT
             )
         }
     }
 
+    fun showEditEventDialog(event: PlannedDayOffEntity) {
+        _uiState.update {
+            it.copy(
+                showAddEventDialog = true,
+                editingEvent = event,
+                addEventDate = LocalDate.parse(event.targetDate),
+                addEventName = event.eventName,
+                addEventType = event.type
+            )
+        }
+    }
+
     fun dismissAddEventDialog() {
-        _uiState.update { it.copy(showAddEventDialog = false) }
+        _uiState.update { it.copy(showAddEventDialog = false, editingEvent = null) }
     }
 
     fun updateAddEventDate(date: LocalDate) {
+        // Block past dates
+        if (date.isBefore(LocalDate.now())) return
         _uiState.update { it.copy(addEventDate = date) }
     }
 
@@ -122,16 +140,37 @@ class CalendarViewModel @Inject constructor(
     fun saveEvent() {
         val state = _uiState.value
         if (state.addEventName.isBlank()) return
+        // Block past dates
+        if (state.addEventDate.isBefore(LocalDate.now())) return
 
         viewModelScope.launch {
-            attendanceRepository.insertPlannedDayOff(
-                targetDate = state.addEventDate.toString(),
-                eventName = state.addEventName,
-                type = state.addEventType
-            )
-            _uiState.update { it.copy(showAddEventDialog = false) }
+            if (state.editingEvent != null) {
+                // Update existing event
+                val updated = state.editingEvent.copy(
+                    targetDate = state.addEventDate.toString(),
+                    eventName = state.addEventName,
+                    type = state.addEventType
+                )
+                attendanceRepository.updatePlannedDayOff(updated)
+            } else {
+                // Insert new event
+                attendanceRepository.insertPlannedDayOff(
+                    targetDate = state.addEventDate.toString(),
+                    eventName = state.addEventName,
+                    type = state.addEventType
+                )
+            }
+            _uiState.update { it.copy(showAddEventDialog = false, editingEvent = null) }
             // Re-select the date to refresh the detail view
             selectDate(state.addEventDate)
+        }
+    }
+
+    fun deleteEvent(event: PlannedDayOffEntity) {
+        viewModelScope.launch {
+            attendanceRepository.deletePlannedDayOff(event)
+            // Refresh the selected date view
+            _uiState.value.selectedDate?.let { selectDate(it) }
         }
     }
 }
