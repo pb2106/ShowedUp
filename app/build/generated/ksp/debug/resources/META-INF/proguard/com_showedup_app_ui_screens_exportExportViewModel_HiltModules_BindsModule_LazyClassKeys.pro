@@ -1,0 +1,3 @@
+-keep,allowobfuscation,allowshrinking class com.showedup.app.ui.screens.schedule.ScheduleViewModel
+-keep,allowobfuscation,allowshrinking class com.showedup.app.ui.screens.schedule.ScheduleViewModel
+-keep,allowobfuscation,allowshrinking class com.showedup.app.ui.screens.export.ExportViewModel

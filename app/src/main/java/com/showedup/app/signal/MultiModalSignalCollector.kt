@@ -82,7 +82,8 @@ class MultiModalSignalCollector @Inject constructor(
      * GPS: one-shot getCurrentLocation → hash → null Location object.
      */
     @SuppressLint("MissingPermission")
-    private suspend fun collectGps(): String? = try {
+    private suspend fun collectGps(): String? {
+        return try {
         if (!hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)) return null
 
         val fusedClient = LocationServices.getFusedLocationProviderClient(context)
@@ -102,12 +103,14 @@ class MultiModalSignalCollector @Inject constructor(
             hashUtils.toHex(hash)
         } else null
     } catch (e: Exception) { null }
+    }
 
     /**
      * WiFi: scan nearby APs → hash sorted BSSIDs.
      */
     @SuppressLint("MissingPermission")
-    private suspend fun collectWifi(): String? = try {
+    private suspend fun collectWifi(): String? {
+        return try {
         val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         val results = wifiManager.scanResults
         if (results.isNullOrEmpty()) return null
@@ -116,12 +119,14 @@ class MultiModalSignalCollector @Inject constructor(
         val hash = hashUtils.hashWithSalt(sortedBssids.toByteArray())
         hashUtils.toHex(hash)
     } catch (e: Exception) { null }
+    }
 
     /**
      * Bluetooth: BLE scan → count only, no identifiers stored.
      */
     @SuppressLint("MissingPermission")
-    private suspend fun collectBluetooth(): String? = try {
+    private suspend fun collectBluetooth(): String? {
+        return try {
         if (!hasPermission(Manifest.permission.BLUETOOTH_SCAN)) return null
 
         val btManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -160,12 +165,14 @@ class MultiModalSignalCollector @Inject constructor(
         val hash = hashUtils.hashWithSalt("bt_count:$count".toByteArray())
         hashUtils.toHex(hash)
     } catch (e: Exception) { null }
+    }
 
     /**
      * Audio: 5s AudioRecord → FFT frequency fingerprint → hash → zero buffer.
      */
     @SuppressLint("MissingPermission")
-    private suspend fun collectAudio(): String? = try {
+    private suspend fun collectAudio(): String? {
+        return try {
         if (!hasPermission(Manifest.permission.RECORD_AUDIO)) return null
 
         withContext(Dispatchers.IO) {
@@ -220,11 +227,13 @@ class MultiModalSignalCollector @Inject constructor(
             hashUtils.toHex(hash)
         }
     } catch (e: Exception) { null }
+    }
 
     /**
      * Sensor: accelerometer + gyroscope sample → hash.
      */
-    private suspend fun collectSensor(): String? = try {
+    private suspend fun collectSensor(): String? {
+        return try {
         val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
         val accelData = getSensorReading(sensorManager, Sensor.TYPE_ACCELEROMETER)
@@ -241,6 +250,7 @@ class MultiModalSignalCollector @Inject constructor(
         val hash = hashUtils.hashWithSalt(data.toByteArray())
         hashUtils.toHex(hash)
     } catch (e: Exception) { null }
+    }
 
     private suspend fun getSensorReading(
         sensorManager: SensorManager,
