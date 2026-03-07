@@ -111,6 +111,10 @@ app/build/outputs/apk/debug/app-debug.apk
 - Background location explicitly removed from manifest
 - R8 full-mode obfuscation in release builds
 
+## Future
+- Easier class schedule generation
+- attendance percentage calculator
+
 ## License
 
 This project is private and not licensed for modification or distribution use.
