@@ -13,9 +13,10 @@ import com.showedup.app.data.entity.*
         DayOffRecordEntity::class,
         PlannedDayOffEntity::class,
         WeeklyScheduleEntity::class,
-        SecurityEventEntity::class
+        SecurityEventEntity::class,
+        SubjectEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -26,4 +27,5 @@ abstract class ShowedUpDatabase : RoomDatabase() {
     abstract fun plannedDayOffDao(): PlannedDayOffDao
     abstract fun weeklyScheduleDao(): WeeklyScheduleDao
     abstract fun securityEventDao(): SecurityEventDao
+    abstract fun subjectDao(): SubjectDao
 }

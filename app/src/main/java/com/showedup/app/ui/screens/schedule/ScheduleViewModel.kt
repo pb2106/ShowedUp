@@ -3,9 +3,11 @@ package com.showedup.app.ui.screens.schedule
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.showedup.app.data.entity.SubjectEntity
 import com.showedup.app.data.entity.TimetableEntry
 import com.showedup.app.data.entity.WeeklyScheduleEntity
 import com.showedup.app.data.repository.ScheduleRepository
+import com.showedup.app.scheduler.AttendanceScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
@@ -18,6 +20,7 @@ import javax.inject.Inject
 
 data class ScheduleUiState(
     val classes: List<TimetableEntry> = emptyList(),
+    val subjects: List<SubjectEntity> = emptyList(),
     val weeklySchedule: WeeklyScheduleEntity? = null,
     val activeDays: Set<DayOfWeek> = DayOfWeek.entries.toSet(),
     val isLoading: Boolean = true,
@@ -86,7 +89,8 @@ private const val KEY_TIME_SLOTS = "time_slots"
 @HiltViewModel
 class ScheduleViewModel @Inject constructor(
     private val scheduleRepository: ScheduleRepository,
-    @ApplicationContext private val appContext: Context
+    @ApplicationContext private val appContext: Context,
+    private val attendanceScheduler: AttendanceScheduler
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ScheduleUiState())
@@ -137,23 +141,27 @@ class ScheduleViewModel @Inject constructor(
 
     private fun loadSchedule() {
         viewModelScope.launch {
-            scheduleRepository.getAllClasses()
-                .combine(scheduleRepository.getLatestWeeklySchedule()) { classes, schedule ->
-                    val activeDays = schedule?.activeDays
-                        ?.split(",")
-                        ?.filter { it.isNotBlank() }
-                        ?.map { DayOfWeek.of(it.trim().toInt()) }
-                        ?.toSet()
-                        ?: DayOfWeek.entries.toSet()
+            combine(
+                scheduleRepository.getAllClasses(),
+                scheduleRepository.getLatestWeeklySchedule(),
+                scheduleRepository.getAllSubjects()
+            ) { classes, schedule, subjects ->
+                val activeDays = schedule?.activeDays
+                    ?.split(",")
+                    ?.filter { it.isNotBlank() }
+                    ?.map { DayOfWeek.of(it.trim().toInt()) }
+                    ?.toSet()
+                    ?: DayOfWeek.entries.toSet()
 
-                    _uiState.value.copy(
-                        classes = classes,
-                        weeklySchedule = schedule,
-                        activeDays = activeDays,
-                        isLoading = false
-                    )
-                }
-                .collect { _uiState.value = it }
+                _uiState.value.copy(
+                    classes = classes,
+                    subjects = subjects,
+                    weeklySchedule = schedule,
+                    activeDays = activeDays,
+                    isLoading = false
+                )
+            }
+            .collect { _uiState.value = it }
         }
     }
 
@@ -265,6 +273,7 @@ class ScheduleViewModel @Inject constructor(
                     scheduleRepository.addClass(entry)
                 }
             }
+            attendanceScheduler.scheduleForToday()
             dismissDialog()
         }
     }
@@ -272,6 +281,7 @@ class ScheduleViewModel @Inject constructor(
     fun deleteClass(entry: TimetableEntry) {
         viewModelScope.launch {
             scheduleRepository.deleteClass(entry)
+            attendanceScheduler.scheduleForToday()
         }
     }
 }

@@ -48,6 +48,7 @@ class AttendanceTriggerWorker @AssistedInject constructor(
                 .setInputData(data)
                 .setInitialDelay(java.time.Duration.ofMillis(delayMs))
                 .addTag("attendance_$entryId")
+                .addTag("attendance_today")
                 .build()
         }
     }

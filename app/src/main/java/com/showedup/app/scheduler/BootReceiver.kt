@@ -18,7 +18,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class BootReceiver : BroadcastReceiver() {
 
-    @Inject lateinit var timetableDao: TimetableDao
+    @Inject lateinit var attendanceScheduler: AttendanceScheduler
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
@@ -34,17 +34,6 @@ class BootReceiver : BroadcastReceiver() {
     }
 
     private suspend fun rescheduleAll(context: Context) {
-        val workManager = WorkManager.getInstance(context)
-        // Cancel all existing attendance work
-        workManager.cancelAllWorkByTag("attendance")
-
-        // This is a simplified scheduling — get today's remaining classes
-        val today = LocalDate.now()
-        val dayOfWeek = today.dayOfWeek
-        val now = LocalTime.now()
-        val nowMinutes = now.hour * 60 + now.minute
-
-        // We collect classes via direct dao query since Flow isn't suitable here
-        // In production, this would use a suspend query
+        attendanceScheduler.scheduleForToday()
     }
 }

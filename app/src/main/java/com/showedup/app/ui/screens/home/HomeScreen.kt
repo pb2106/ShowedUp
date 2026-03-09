@@ -48,8 +48,8 @@ fun HomeScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "Today",
-                            style = MaterialTheme.typography.headlineLarge,
+                            text = "Today - ${uiState.currentDateFormatted}",
+                            style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -217,12 +217,13 @@ private fun SummaryCard(attended: Int, total: Int) {
                 else MaterialTheme.colorScheme.surfaceVariant
             ) {
                 Box(
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(56.dp),
                     contentAlignment = Alignment.Center
                 ) {
+                    val percentage = if (total > 0) (attended * 100) / total else 0
                     Text(
-                        text = "$attended",
-                        style = MaterialTheme.typography.headlineMedium,
+                        text = if (total > 0) "$percentage%" else "-",
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = if (attended >= total && total > 0) Emerald500
                         else MaterialTheme.colorScheme.onSurface

@@ -20,7 +20,8 @@ data class HomeUiState(
     val attendedCount: Int = 0,
     val totalCount: Int = 0,
     val isLoading: Boolean = true,
-    val greeting: String = ""
+    val greeting: String = "",
+    val currentDateFormatted: String = ""
 )
 
 @HiltViewModel
@@ -36,15 +37,14 @@ class HomeViewModel @Inject constructor(
     private val todayStr = today.format(DateTimeFormatter.ISO_LOCAL_DATE)
 
     init {
-        loadTodayData()
-    }
-
-    private fun loadTodayData() {
         viewModelScope.launch {
+            // Setup static strings once
             val greeting = getGreeting()
-            _uiState.update { it.copy(greeting = greeting) }
+            val formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d")
+            val formattedDate = today.format(formatter)
+            _uiState.update { it.copy(greeting = greeting, currentDateFormatted = formattedDate) }
 
-            // Get today's classes
+            // Continuously listen to database changes for today's classes and attendance
             scheduleRepository.getClassesByDay(today.dayOfWeek)
                 .combine(attendanceRepository.getRecordsByDate(todayStr)) { classes, records ->
                     HomeUiState(
@@ -53,7 +53,8 @@ class HomeViewModel @Inject constructor(
                         attendedCount = records.size,
                         totalCount = classes.size,
                         isLoading = false,
-                        greeting = greeting
+                        greeting = greeting,
+                        currentDateFormatted = formattedDate
                     )
                 }
                 .collect { state -> _uiState.value = state }

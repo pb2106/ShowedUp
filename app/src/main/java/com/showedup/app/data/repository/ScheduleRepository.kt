@@ -2,8 +2,10 @@ package com.showedup.app.data.repository
 
 import com.showedup.app.crypto.CanonicalJson
 import com.showedup.app.crypto.HashUtils
+import com.showedup.app.data.dao.SubjectDao
 import com.showedup.app.data.dao.TimetableDao
 import com.showedup.app.data.dao.WeeklyScheduleDao
+import com.showedup.app.data.entity.SubjectEntity
 import com.showedup.app.data.entity.TimetableEntry
 import com.showedup.app.data.entity.WeeklyScheduleEntity
 import kotlinx.coroutines.flow.Flow
@@ -16,6 +18,7 @@ import javax.inject.Singleton
 class ScheduleRepository @Inject constructor(
     private val timetableDao: TimetableDao,
     private val weeklyScheduleDao: WeeklyScheduleDao,
+    private val subjectDao: SubjectDao,
     private val hashUtils: HashUtils,
     private val canonicalJson: CanonicalJson
 ) {
@@ -27,6 +30,9 @@ class ScheduleRepository @Inject constructor(
     fun getClassesByDay(dayOfWeek: DayOfWeek): Flow<List<TimetableEntry>> =
         timetableDao.getByDayOfWeek(dayOfWeek.value)
 
+    suspend fun getActiveClassesByDaySnapshot(dayOfWeek: DayOfWeek): List<TimetableEntry> =
+        timetableDao.getActiveByDayOfWeekSnapshot(dayOfWeek.value)
+
     suspend fun getClassById(id: Long): TimetableEntry? = timetableDao.getById(id)
 
     suspend fun addClass(entry: TimetableEntry): Long = timetableDao.insert(entry)
@@ -34,6 +40,17 @@ class ScheduleRepository @Inject constructor(
     suspend fun updateClass(entry: TimetableEntry) = timetableDao.update(entry)
 
     suspend fun deleteClass(entry: TimetableEntry) = timetableDao.delete(entry)
+
+    // Subjects
+    fun getAllSubjects(): Flow<List<SubjectEntity>> = subjectDao.getAll()
+
+    suspend fun getSubjectById(id: Long): SubjectEntity? = subjectDao.getById(id)
+
+    suspend fun addSubject(subject: SubjectEntity): Long = subjectDao.insert(subject)
+
+    suspend fun updateSubject(subject: SubjectEntity) = subjectDao.update(subject)
+
+    suspend fun deleteSubject(subject: SubjectEntity) = subjectDao.delete(subject)
 
     // Weekly Schedule
     fun getLatestWeeklySchedule(): Flow<WeeklyScheduleEntity?> =

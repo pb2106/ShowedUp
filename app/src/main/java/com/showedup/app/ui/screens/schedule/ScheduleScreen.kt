@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.showedup.app.data.entity.SubjectEntity
 import com.showedup.app.data.entity.TimetableEntry
 import com.showedup.app.ui.components.*
 import com.showedup.app.ui.theme.*
@@ -33,6 +34,7 @@ import java.util.Locale
 @Composable
 fun ScheduleScreen(
     onBack: () -> Unit,
+    onNavigateToSubjects: () -> Unit,
     viewModel: ScheduleViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -47,6 +49,9 @@ fun ScheduleScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onNavigateToSubjects) {
+                        Icon(Icons.Default.MenuBook, "Manage Subjects")
+                    }
                     // Edit time slots button
                     IconButton(onClick = { viewModel.showSlotEditor() }) {
                         Icon(Icons.Default.EditCalendar, "Edit Periods")
@@ -156,10 +161,10 @@ fun ScheduleScreen(
             )
         }
 
-        // Add/Edit class dialog
         if (uiState.showAddDialog) {
             AddClassDialog(
                 editEntry = uiState.editingEntry,
+                subjects = uiState.subjects,
                 prefilledDay = uiState.tappedDay,
                 prefilledSlot = uiState.tappedSlotIndex?.let { uiState.timeSlots.getOrNull(it) },
                 onDismiss = { viewModel.dismissDialog() },
@@ -456,6 +461,7 @@ private val cellColors = listOf(
 @Composable
 private fun AddClassDialog(
     editEntry: TimetableEntry?,
+    subjects: List<SubjectEntity>,
     prefilledDay: DayOfWeek?,
     prefilledSlot: TimeSlot?,
     onDismiss: () -> Unit,
@@ -500,6 +506,39 @@ private fun AddClassDialog(
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                if (!isEditing && subjects.isNotEmpty()) {
+                    var expanded by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = !expanded }
+                    ) {
+                        OutlinedTextField(
+                            value = "Select Subject to Auto-fill",
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                            modifier = Modifier.menuAnchor().fillMaxWidth(),
+                            textStyle = MaterialTheme.typography.bodyMedium
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            subjects.forEach { subject ->
+                                DropdownMenuItem(
+                                    text = { Text(subject.name) },
+                                    onClick = {
+                                        courseName = subject.name
+                                        if (subject.code.isNotBlank()) courseCode = subject.code
+                                        if (subject.instructor.isNotBlank()) instructor = subject.instructor
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+                
                 ShowedUpTextField(
                     value = courseName,
                     onValueChange = { courseName = it },

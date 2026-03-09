@@ -21,6 +21,9 @@ interface TimetableDao {
     @Query("SELECT * FROM timetable_entries WHERE isActive = 1 AND dayOfWeek = :dayOfWeek ORDER BY startTimeMinutes")
     fun getByDayOfWeek(dayOfWeek: Int): Flow<List<TimetableEntry>>
 
+    @Query("SELECT * FROM timetable_entries WHERE isActive = 1 AND dayOfWeek = :dayOfWeek ORDER BY startTimeMinutes")
+    suspend fun getActiveByDayOfWeekSnapshot(dayOfWeek: Int): List<TimetableEntry>
+
     @Query("SELECT * FROM timetable_entries WHERE id = :id")
     suspend fun getById(id: Long): TimetableEntry?
 
@@ -125,4 +128,22 @@ interface SecurityEventDao {
 
     @Query("SELECT COUNT(*) FROM security_events WHERE eventType = 'BIOMETRIC_FAILURE' AND timestamp > :since")
     suspend fun countBiometricFailuresSince(since: Long): Int
+}
+
+@Dao
+interface SubjectDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(subject: SubjectEntity): Long
+
+    @Update
+    suspend fun update(subject: SubjectEntity)
+
+    @Delete
+    suspend fun delete(subject: SubjectEntity)
+
+    @Query("SELECT * FROM subjects ORDER BY name ASC")
+    fun getAll(): Flow<List<SubjectEntity>>
+
+    @Query("SELECT * FROM subjects WHERE id = :id")
+    suspend fun getById(id: Long): SubjectEntity?
 }

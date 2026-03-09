@@ -33,4 +33,5 @@ object AppModule {
     @Provides fun providePlannedDayOffDao(db: ShowedUpDatabase): PlannedDayOffDao = db.plannedDayOffDao()
     @Provides fun provideWeeklyScheduleDao(db: ShowedUpDatabase): WeeklyScheduleDao = db.weeklyScheduleDao()
     @Provides fun provideSecurityEventDao(db: ShowedUpDatabase): SecurityEventDao = db.securityEventDao()
+    @Provides fun provideSubjectDao(db: ShowedUpDatabase): SubjectDao = db.subjectDao()
 }
